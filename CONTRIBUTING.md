@@ -26,7 +26,7 @@ Be respectful, inclusive, and constructive. We are building tools for the Armeni
 1. Fork the repository
 2. Clone your fork:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/armenian-video-dubbing.git
+   git clone https://github.com/Edmon02/armenian-video-dubbing.git
    cd armenian-video-dubbing
    ```
 3. Create a feature branch:

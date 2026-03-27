@@ -54,7 +54,7 @@ Armenian Video Dubbing AI is a complete end-to-end pipeline that transforms Engl
 
 ```bash
 # Clone the repository
-git clone https://github.com/YOUR_USERNAME/armenian-video-dubbing.git
+git clone https://github.com/Edmon02/armenian-video-dubbing.git
 cd armenian-video-dubbing
 
 # Option 1: Conda environment (recommended)
