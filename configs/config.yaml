@@ -1,0 +1,170 @@
+# Armenian Video Dubbing AI - Master Configuration
+# All paths are relative to project root unless absolute
+
+project:
+  name: "armenian-video-dubbing"
+  version: "0.1.0"
+  root: "."
+  device: "cuda"  # cuda, cpu, mps
+  dtype: "float16"  # float16, bfloat16, float32
+  seed: 42
+
+# === ASR Configuration ===
+asr:
+  backend: "whisper"  # whisper, nemo
+  whisper:
+    model: "large-v3"
+    model_path: "models/asr/whisper-large-v3-armenian"
+    language: "hy"
+    task: "transcribe"
+    beam_size: 5
+    vad_filter: true
+    word_timestamps: true
+    compute_type: "float16"  # for faster-whisper
+    batch_size: 16
+  nemo:
+    model_path: "models/asr/stt_hy_fastconformer_ctc"
+    language: "hy"
+    batch_size: 32
+
+# === Translation Configuration ===
+translation:
+  model: "facebook/seamless-m4t-v2-large"
+  model_path: "models/translation/seamless-m4t-v2-large"
+  source_lang: "eng"  # ISO 639-3
+  target_lang: "hye"  # ISO 639-3 for Eastern Armenian
+  dialect: "eastern"  # eastern (hye) or western (hyw)
+  max_length: 512
+  num_beams: 5
+  dtype: "float16"
+
+# === TTS + Voice Cloning Configuration ===
+tts:
+  backend: "fish-speech"  # fish-speech, cosyvoice
+  fish_speech:
+    model_path: "models/tts/fish-speech-s2-armenian"
+    base_model: "fishaudio/fish-speech-s2-pro"
+    sample_rate: 44100
+    max_new_tokens: 2048
+    top_p: 0.7
+    temperature: 0.7
+    repetition_penalty: 1.2
+    emotion_tags: true  # Enable <happy>, <sad>, <angry>, etc.
+    reference_audio_seconds: 10  # Duration of reference clip for cloning
+    chunk_length: 200  # characters per chunk
+  cosyvoice:
+    model_path: "models/tts/cosyvoice-3.0-0.5b-armenian"
+    base_model: "FunAudioLLM/CosyVoice-300M-Instruct"
+    sample_rate: 22050
+
+# === Lip-Sync Configuration ===
+lipsync:
+  model: "musetalk"
+  model_path: "models/lipsync/MuseTalk"
+  fps: 25
+  face_det_batch_size: 8
+  bbox_shift: 0  # Vertical shift of face bbox
+  batch_size: 16
+  use_float16: true
+  face_enhancement: true  # CodeFormer post-processing
+
+# === Audio Post-Processing ===
+audio:
+  demucs:
+    model: "htdemucs_ft"
+    model_path: "models/demucs"
+    segment: 7.8  # seconds per segment
+    overlap: 0.25
+    shifts: 1
+    device: "cuda"
+  sample_rate: 44100
+  loudness_target: -14.0  # LUFS
+  crossfade_ms: 50
+
+# === Video Post-Processing ===
+video:
+  codeformer:
+    model_path: "models/codeformer/codeformer.pth"
+    fidelity: 0.7  # 0=quality, 1=fidelity
+    upscale: 1
+  output_codec: "libx264"
+  output_crf: 18
+  output_preset: "medium"
+  output_audio_codec: "aac"
+  output_audio_bitrate: "192k"
+
+# === Duration Matching ===
+timing:
+  max_stretch_ratio: 1.25  # Maximum time-stretch factor
+  min_compress_ratio: 0.80  # Minimum time-compress factor
+  silence_threshold_db: -40
+  min_pause_ms: 150
+  method: "rubberband"  # rubberband, wsola
+
+# === Paths ===
+paths:
+  data_raw: "data/raw"
+  data_processed: "data/processed"
+  common_voice: "data/common_voice"
+  youtube_crawl: "data/youtube_crawl"
+  tts_studio: "data/tts_studio"
+  lipsync_data: "data/lipsync_hdtf"
+  train_manifest: "data/splits/train.json"
+  val_manifest: "data/splits/val.json"
+  test_manifest: "data/splits/test.json"
+  output_dir: "outputs"
+  temp_dir: "outputs/temp"
+  log_dir: "logs"
+
+# === Training ===
+training:
+  asr:
+    epochs: 30
+    learning_rate: 1.0e-4
+    warmup_steps: 500
+    batch_size: 16
+    gradient_accumulation: 4
+    max_grad_norm: 1.0
+    lora_r: 32
+    lora_alpha: 64
+    lora_dropout: 0.05
+    eval_steps: 500
+    save_steps: 1000
+    fp16: true
+    dataloader_workers: 8
+  tts:
+    epochs: 100
+    learning_rate: 5.0e-5
+    warmup_steps: 1000
+    batch_size: 8
+    gradient_accumulation: 8
+    lora_r: 64
+    lora_alpha: 128
+    lora_dropout: 0.1
+    eval_steps: 200
+    save_steps: 500
+    fp16: true
+
+# === Evaluation ===
+evaluation:
+  wer_threshold: 0.08
+  mos_threshold: 4.6
+  speaker_similarity_threshold: 0.85
+  lse_c_threshold: 1.8
+  lse_d_threshold: 1.8
+  comet_threshold: 0.85
+
+# === Inference ===
+inference:
+  batch_video_max_concurrent: 2
+  gpu_memory_fraction: 0.9
+  enable_quantization: true  # 4-bit quantization
+  quantization_bits: 4
+
+# === Watermark / Ethics ===
+ethics:
+  add_watermark: true
+  watermark_text: "AI-Dubbed"
+  watermark_opacity: 0.3
+  consent_required: true
+  consent_log_path: "logs/voice_consent.json"

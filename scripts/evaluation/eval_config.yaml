@@ -1,0 +1,134 @@
+evaluation:
+  # Test sets configuration
+  test_sets:
+    asr:
+      size: 100
+      source: "common_voice"
+      sample_rate: 16000
+      duration_min_sec: 1
+      duration_max_sec: 30
+
+    tts:
+      size: 50
+      emotions: ["neutral", "happy", "sad", "angry", "excited", "calm"]
+      sample_rate: 44100
+
+    lipsync:
+      size: 20
+      video_format: "mp4"
+      min_face_ratio: 0.30
+
+    translation:
+      size: 100
+      source_language: "eng"
+      target_language: "hye"
+      domains: ["news", "casual", "technical"]
+
+  # Metrics to compute (all enabled by default)
+  metrics:
+    asr:
+      - wer
+      - cer
+      - per_speaker_wer
+      - confidence_intervals
+
+    tts:
+      - mos_proxy
+      - prosody_score
+      - artifact_detection
+      - emotion_preservation
+
+    speaker_similarity:
+      - cosine_similarity
+      - confidence_intervals
+      - per_speaker_analysis
+
+    lipsync:
+      - lse_c
+      - lse_d
+      - offset_detection
+
+    translation:
+      - comet
+      - meteor
+      - bertscore
+      - semantic_similarity
+
+    performance:
+      - per_component_time
+      - gpu_memory_usage
+      - real_time_factor
+      - end_to_end_timing
+
+  # Quality targets (from project spec)
+  targets:
+    wer: 0.08  # <8%
+    mos: 4.6
+    speaker_similarity: 0.85
+    lse_c: 1.8
+    lse_d: 1.8
+    comet: 0.85
+    speed_min: 5.0  # minutes for 10-min video
+
+  # Regression detection
+  regression:
+    enabled: true
+    wer_tolerance_pct: 5
+    mos_tolerance_pct: 3
+    speaker_sim_tolerance_pct: 3
+    comet_tolerance_pct: 5
+
+  # Human evaluation
+  human_eval:
+    enabled: false  # Can be enabled later
+    n_participants_mos: 20
+    n_participants_speaker_sim: 15
+    n_participants_lipsync: 12
+    n_participants_overall: 10
+
+  # Baselines to compare against
+  baselines:
+    - google_translate
+    - concatenation_tts
+    - tts_no_prosody
+    - no_lipsync
+
+  # Output configuration
+  output_dir: "outputs/evaluation"
+  save_failure_samples: true
+  save_predictions: true
+  generate_html_dashboard: true
+  generate_latex_report: true
+
+  # Logging
+  verbose: true
+  log_level: "INFO"
+  save_logs: true
+
+# Paths to models and data
+paths:
+  models:
+    asr: "models/asr/whisper-hy-lora"
+    tts: "models/tts/fish-speech-hy-lora"
+    lipsync: "models/lipsync/musetalk"
+    translation: "pretrained"  # SeamlessM4T (pre-trained, no fine-tune)
+
+  data:
+    common_voice_test: "data/splits/test.jsonl"
+    tts_test: "data/splits/test.jsonl"
+    lipsync_test: "data/lipsync_hdtf/test_manifest.jsonl"
+    translation_test: "data/splits/test.jsonl"
+
+# Device configuration
+device:
+  gpu: "cuda"
+  batch_size:
+    asr: 8
+    tts: 4
+    lipsync: 2
+
+# Optimization
+optimization:
+  use_fp16: true
+  quantization: "none"  # "int8", "int4", or "none"
+  batch_processing: true

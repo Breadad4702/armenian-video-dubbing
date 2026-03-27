@@ -1,0 +1,111 @@
+# YouTube Crawl Configuration
+# Customize search queries for your needs
+
+output_dir: "data/youtube_crawl"
+
+search:
+  max_results_per_query: 200
+  max_total_videos: 50000
+  min_duration_sec: 60
+  max_duration_sec: 36000
+  queries:
+    # ===== News & Public Affairs =====
+    - "Հայաստանի Հանրային Հեռուdelays"
+    - "1TV Armenia"
+    - "Armenia TV նparts"
+    - "Shant TV"
+    - "ArmNews TV"
+    - "Azatutyun Radio Armenian"
+    - "CivilNet Armenian"
+    - "Factor TV Armenian"
+    - "Public TV Armenia news"
+
+    # ===== Podcasts & Talk Shows =====
+    - "Armenian podcast"
+    - "Podcastle Armenian"
+    - "Mediamax Armenian interview"
+    - "EVN Report Armenian"
+    - "Armenian talk show"
+
+    # ===== Education & Academic =====
+    - "Yerevan State University lecture Armenian"
+    - "AUA lecture Armenian"
+    - "Armenian language lesson"
+    - "Armenian history lecture"
+    - "TED talk Armenian"
+    - "Armenian science lecture"
+
+    # ===== Audiobooks & Literature =====
+    - "Armenian audiobook"
+    - "Hovhannes Tumanyan audiobook"
+    - "Armenian literature reading"
+    - "Armenian poetry recitation"
+
+    # ===== Vlogs & Lifestyle =====
+    - "Armenian vlog"
+    - "Yerevan vlog Armenian speaking"
+    - "Armenian cooking tutorial"
+    - "Armenian travel vlog"
+    - "Armenian daily life vlog"
+
+    # ===== Documentaries =====
+    - "Armenian documentary"
+    - "Armenia history documentary Armenian"
+    - "Armenian genocide documentary Armenian"
+    - "Armenian culture documentary"
+
+    # ===== Religion =====
+    - "Armenian church sermon"
+    - "Armenian liturgy"
+    - "Armenian priest sermon"
+
+    # ===== Sports =====
+    - "Armenian football commentary"
+    - "Armenian sports news"
+    - "Armenia national team Armenian commentary"
+
+    # ===== Technology =====
+    - "tech news Armenian"
+    - "programming Armenian tutorial"
+    - "IT Armenia Armenian language"
+
+    # ===== Politics & Parliament =====
+    - "Armenian parliament session"
+    - "Armenian political debate"
+    - "Armenian political analysis"
+
+    # ===== Diaspora =====
+    - "Western Armenian conversation"
+    - "Armenian diaspora interview"
+    - "Lebanese Armenian speaking"
+    - "Los Angeles Armenian community"
+    - "French Armenian interview"
+
+    # ===== Children & Education =====
+    - "Armenian children story"
+    - "Armenian fairy tale"
+    - "Armenian alphabet lesson"
+
+  channel_ids: []
+  playlist_ids: []
+
+download:
+  format: "bestaudio/best"
+  audio_format: "wav"
+  sample_rate: 16000
+  max_concurrent: 4
+  retry_attempts: 3
+  rate_limit: "5M"
+  sleep_interval: 2
+
+segment:
+  vad_aggressiveness: 2
+  min_segment_sec: 1.5
+  max_segment_sec: 25.0
+  padding_ms: 300
+  sample_rate: 16000
+
+filter:
+  min_snr_db: 12
+  min_duration_sec: 1.5
+  max_duration_sec: 25.0

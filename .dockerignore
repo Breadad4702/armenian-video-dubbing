@@ -1,0 +1,58 @@
+# Ignore large data/model directories
+data/
+models/
+outputs/
+logs/
+uploads/
+externals/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Environment
+.env
+.env.local
+*.env
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Docker (prevent recursive builds)
+docker-compose*.yaml
+docker-compose*.yml
+
+# Docs (not needed in image)
+*.md
+!README.md
+LICENSE
+
+# Notebooks
+notebooks/
+*.ipynb
+
+# Tests (not needed in prod image)
+tests/
+
+# CI
+.github/
